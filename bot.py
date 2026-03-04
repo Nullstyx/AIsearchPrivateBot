@@ -82,7 +82,6 @@ def _load_user_permissions():
                     if ch in ('1', '2', '3'):
                         allowed_modes.add(ch)
 
-                # even если строка режимов пуста, сохраняем пустой сет, чтобы явно запретить все режимы
                 ALLOWED_USER_MODES[chat_id] = allowed_modes
 
         logger.info(f"User access list loaded. Chats: {ALLOWED_CHAT_IDS}, raw mode masks: {ALLOWED_USER_MODES}")
@@ -239,7 +238,7 @@ class PerplexityTelegramBot:
     def setup_handlers(self):
         @self.bot.message_handler(func=lambda message: not self.is_allowed_user(message.chat.id))
         def handle_unauthorized(message):
-            self.bot.reply_to(message, "❌ Доступ запрещен. Ваш chat_id не в списке разрешенных пользователей.")
+            self.bot.reply_to(message, "❌ Access denied. Your chat_id is not in the list of allowed users.")
 
         @self.bot.message_handler(func=lambda message: getattr(message.chat, "type", None) != "private")
         def handle_non_private(message):
@@ -255,20 +254,20 @@ class PerplexityTelegramBot:
             user_state.load_from_disk()
             
             help_text = (
-                "👋 Привет! Я бот с интеграцией Perplexity AI.\n\n"
-                "📋 Основные команды:\n"
-                "/mode - сменить режим работы\n"
-                "/reset - сбросить контекст диалога\n"
-                "/prompt - управление системным промптом\n\n"
-                "🔧 Режимы работы:\n"
-                "• Sonar - быстрый режим для обычных вопросов\n"
-                "• Sonar Pro - более точный и детальный режим\n"
-                "• Sonar-reasoning - режим с подробными рассуждениями\n\n"
-                "📝 Контекст диалога:\n"
-                "• Полное сохранение истории (до 100 сообщений или ~12000 токенов)\n"
-                "• Автоматическая умная обрезка при превышении лимитов\n"
-                "• Сохранение контекста при перезапуске бота\n\n"
-                "💡 Просто отправьте мне вопрос, и я найду ответ!"
+                "👋 Hi! I'm the Perplexity AI integrated bot.\n\n"
+                "📋 Main commands:\n"
+                "/mode - change working mode\n"
+                "/reset - reset conversation context\n"
+                "/prompt - manage the system prompt\n\n"
+                "🔧 Bot modes:\n"
+                "• Sonar - fast mode for regular questions\n"
+                "• Sonar Pro - more accurate and detailed mode\n"
+                "• Sonar-reasoning - reasoning mode with detailed explanations\n\n"
+                "📝 Dialogue context:\n"
+                "• Full history saving (up to 100 messages or ~12,000 tokens)\n"
+                "• Automatic smart trimming when limits are exceeded\n"
+                "• Context persistence after bot restarts\n\n"
+                "💡 Just send me your question and I'll find the answer!"
             )
             
             markup = tb_types.InlineKeyboardMarkup()
@@ -278,7 +277,7 @@ class PerplexityTelegramBot:
                 tb_types.InlineKeyboardButton("/prompt", callback_data='cmd_prompt')
             )
             markup.add(tb_types.InlineKeyboardButton(
-                "⤴️ Страница разработчика",
+                "⤴️ Developer's page",
                 url="https://github.com/MrachniyTipchek"
             ))
             
@@ -294,7 +293,7 @@ class PerplexityTelegramBot:
             user_state = self.get_user_state(message.from_user.id)
             allowed_modes = self.get_allowed_modes_for_chat(message.chat.id)
             if not allowed_modes:
-                self.bot.reply_to(message, "Для вас не доступен ни один режим работы бота.")
+                self.bot.reply_to(message, "No bot mode is available to you.")
                 return
 
             markup = tb_types.InlineKeyboardMarkup()
@@ -319,7 +318,7 @@ class PerplexityTelegramBot:
             
             self.bot.send_message(
                 message.chat.id,
-                f"Текущий режим: {mode_names[user_state.mode]}\nВыберите новый режим:",
+                f"Current mode: {mode_names[user_state.mode]}\nSelect a new mode:",
                 reply_markup=markup
             )
 
@@ -332,7 +331,7 @@ class PerplexityTelegramBot:
             user_state = self.get_user_state(message.from_user.id)
             user_state.message_history = []
             user_state.save_to_disk()
-            self.bot.reply_to(message, "Контекст диалога сброшен.")
+            self.bot.reply_to(message, "Conversation context has been reset.")
         
         @self.bot.message_handler(commands=['prompt'])
         def handle_prompt(message):
@@ -344,24 +343,24 @@ class PerplexityTelegramBot:
             
             markup = tb_types.InlineKeyboardMarkup()
             markup.row(
-                tb_types.InlineKeyboardButton("🔄 Сброс", callback_data='prompt_reset'),
-                tb_types.InlineKeyboardButton("✏️ Изменить", callback_data='prompt_edit')
+                tb_types.InlineKeyboardButton("🔄 Reset", callback_data='prompt_reset'),
+                tb_types.InlineKeyboardButton("✏️ Edit", callback_data='prompt_edit')
             )
             
             if user_state.system_prompt and user_state.system_prompt.strip():
                 prompt_text = user_state.system_prompt
             else:
-                prompt_text = "Системный промпт еще не указан!"
+                prompt_text = "System prompt is not set yet!"
             
             self.bot.send_message(
                 message.chat.id,
-                f"📝 Системный промпт:\n\n{prompt_text}",
+                f"📝 System prompt:\n\n{prompt_text}",
                 reply_markup=markup
             )
 
         @self.bot.callback_query_handler(func=lambda call: not self.is_allowed_user(call.message.chat.id))
         def handle_unauthorized_callback(call):
-            self.bot.answer_callback_query(call.id, "❌ Доступ запрещен", show_alert=True)
+            self.bot.answer_callback_query(call.id, "❌ Access denied", show_alert=True)
 
         @self.bot.callback_query_handler(func=lambda call: call.data.startswith('cmd_'))
         def handle_cmd_callback(call):
@@ -375,7 +374,7 @@ class PerplexityTelegramBot:
                 markup = tb_types.InlineKeyboardMarkup()
                 allowed_modes = self.get_allowed_modes_for_chat(call.message.chat.id)
                 if not allowed_modes:
-                    self.bot.answer_callback_query(call.id, "Для вас не доступен ни один режим.", show_alert=True)
+                    self.bot.answer_callback_query(call.id, "No mode is available to you.", show_alert=True)
                     return
 
                 current_mode = user_state.mode
@@ -397,30 +396,30 @@ class PerplexityTelegramBot:
                 self.bot.answer_callback_query(call.id)
                 self.bot.send_message(
                     call.message.chat.id,
-                    f"Текущий режим: {mode_names[user_state.mode]}\nВыберите новый режим:",
+                    f"Current mode: {mode_names[user_state.mode]}\nSelect a new mode:",
                     reply_markup=markup
                 )
             elif call.data == 'cmd_reset':
                 user_state = self.get_user_state(call.from_user.id)
                 user_state.message_history = []
                 user_state.save_to_disk()
-                self.bot.answer_callback_query(call.id, "Контекст диалога сброшен")
-                self.bot.send_message(call.message.chat.id, "Контекст диалога сброшен.")
+                self.bot.answer_callback_query(call.id, "Conversation context has been reset")
+                self.bot.send_message(call.message.chat.id, "Conversation context has been reset.")
             elif call.data == 'cmd_prompt':
                 user_state = self.get_user_state(call.from_user.id)
                 markup = tb_types.InlineKeyboardMarkup()
                 markup.row(
-                    tb_types.InlineKeyboardButton("🔄 Сброс", callback_data='prompt_reset'),
-                    tb_types.InlineKeyboardButton("✏️ Изменить", callback_data='prompt_edit')
+                    tb_types.InlineKeyboardButton("🔄 Reset", callback_data='prompt_reset'),
+                    tb_types.InlineKeyboardButton("✏️ Edit", callback_data='prompt_edit')
                 )
                 if user_state.system_prompt and user_state.system_prompt.strip():
                     prompt_text = user_state.system_prompt
                 else:
-                    prompt_text = "Системный промпт еще не указан!"
+                    prompt_text = "System prompt is not set yet!"
                 self.bot.answer_callback_query(call.id)
                 self.bot.send_message(
                     call.message.chat.id,
-                    f"📝 Системный промпт:\n\n{prompt_text}",
+                    f"📝 System prompt:\n\n{prompt_text}",
                     reply_markup=markup
                 )
 
@@ -447,7 +446,7 @@ class PerplexityTelegramBot:
                 return
 
             if allowed_modes and user_state.mode not in allowed_modes:
-                self.bot.answer_callback_query(call.id, "Этот режим вам недоступен.", show_alert=True)
+                self.bot.answer_callback_query(call.id, "This mode is not available for you.", show_alert=True)
                 return
             
             user_state.save_to_disk()
@@ -461,9 +460,9 @@ class PerplexityTelegramBot:
             markup.add(tb_types.InlineKeyboardButton(f"{check_pro}Sonar Pro", callback_data='mode_pro'))
             markup.add(tb_types.InlineKeyboardButton(f"{check_reasoning}Sonar-reasoning", callback_data='mode_reasoning'))
             
-            self.bot.answer_callback_query(call.id, f"Режим изменен на: {mode_name}")
+            self.bot.answer_callback_query(call.id, f"Mode changed to: {mode_name}")
             self.bot.edit_message_text(
-                f"Текущий режим: {mode_name}\nВыберите новый режим:",
+                f"Current mode: {mode_name}\nSelect a new mode:",
                 call.message.chat.id,
                 call.message.message_id,
                 reply_markup=markup
@@ -480,15 +479,15 @@ class PerplexityTelegramBot:
             
             markup = tb_types.InlineKeyboardMarkup()
             markup.row(
-                tb_types.InlineKeyboardButton("🔄 Сброс", callback_data='prompt_reset'),
-                tb_types.InlineKeyboardButton("✏️ Изменить", callback_data='prompt_edit')
+                tb_types.InlineKeyboardButton("🔄 Reset", callback_data='prompt_reset'),
+                tb_types.InlineKeyboardButton("✏️ Edit", callback_data='prompt_edit')
             )
             
-            prompt_text = "Системный промпт еще не указан!"
+            prompt_text = "System prompt is not set yet!"
             
-            self.bot.answer_callback_query(call.id, "Промпт сброшен")
+            self.bot.answer_callback_query(call.id, "Prompt has been reset")
             self.bot.edit_message_text(
-                f"📝 Системный промпт:\n\n{prompt_text}",
+                f"📝 System prompt:\n\n{prompt_text}",
                 call.message.chat.id,
                 call.message.message_id,
                 reply_markup=markup
@@ -505,9 +504,9 @@ class PerplexityTelegramBot:
             self.bot.answer_callback_query(call.id)
             self.bot.send_message(
                 call.message.chat.id,
-                "✏️ Отправьте новый системный промпт. Это инструкция, которая определяет роль и поведение бота.\n\n"
-                "Пример: 'Ты опытный программист. Отвечай кратко и по делу.'\n\n"
-                "Для отмены отправьте /cancel"
+                "✏️ Please send a new system prompt. This is an instruction that determines the bot's role and behavior.\n\n"
+                "Example: 'You are an experienced programmer. Respond concisely and to the point.'\n\n"
+                "To cancel, send /cancel"
             )
 
         @self.bot.message_handler(commands=['cancel'])
@@ -519,9 +518,9 @@ class PerplexityTelegramBot:
             user_state = self.get_user_state(message.from_user.id)
             if hasattr(user_state, 'waiting_for_prompt') and user_state.waiting_for_prompt:
                 user_state.waiting_for_prompt = False
-                self.bot.reply_to(message, "Отмена изменения промпта.")
+                self.bot.reply_to(message, "System prompt modification cancelled.")
             else:
-                self.bot.reply_to(message, "Нет активных операций для отмены.")
+                self.bot.reply_to(message, "There are no active operations to cancel.")
 
         @self.bot.message_handler(content_types=['text'])
         def handle_text(message):
@@ -535,7 +534,7 @@ class PerplexityTelegramBot:
                 user_state.system_prompt = message.text
                 user_state.waiting_for_prompt = False
                 user_state.save_to_disk()
-                self.bot.reply_to(message, f"✅ Системный промпт обновлен:\n\n{message.text}")
+                self.bot.reply_to(message, f"✅ System prompt updated:\n\n{message.text}")
                 return
             
             self.process_message(message, message.text)
@@ -548,8 +547,8 @@ class PerplexityTelegramBot:
                 return
             self.bot.reply_to(
                 message, 
-                "К сожалению, Perplexity API не поддерживает обработку изображений напрямую. "
-                "Отправьте текстовый вопрос или опишите изображение текстом."
+                "Unfortunately, Perplexity API does not support processing images directly. "
+                "Send a text question or describe the image in text."
             )
 
         @self.bot.message_handler(content_types=['document'])
@@ -560,8 +559,8 @@ class PerplexityTelegramBot:
                 return
             self.bot.reply_to(
                 message,
-                "К сожалению, Perplexity API не поддерживает обработку документов напрямую. "
-                "Отправьте текстовый вопрос или опишите содержимое документа."
+                "Unfortunately, Perplexity API does not support processing documents directly. "
+                "Send a text question or describe the document's content."
             )
 
     def process_message(self, message, user_text: str):
@@ -626,17 +625,17 @@ class PerplexityTelegramBot:
                 else:
                     self.bot.reply_to(message, assistant_message)
             else:
-                self.bot.reply_to(message, "Не удалось получить ответ от API.")
+                self.bot.reply_to(message, "Failed to get a response from the API.")
                 
         except httpx.HTTPStatusError as e:
             logger.error(f"HTTP error: {e.response.status_code} - {e.response.text}")
-            self.bot.reply_to(message, f"Ошибка API: {e.response.status_code}")
+            self.bot.reply_to(message, f"API error: {e.response.status_code}")
         except httpx.RequestError as e:
             logger.error(f"Request error: {e}")
-            self.bot.reply_to(message, "Ошибка подключения к API. Попробуйте позже.")
+            self.bot.reply_to(message, "Connection error to API. Try again later.")
         except Exception as e:
             logger.error(f"Error processing message: {e}")
-            self.bot.reply_to(message, f"Ошибка обработки запроса: {str(e)}")
+            self.bot.reply_to(message, f"Error processing request: {str(e)}")
 
     def run(self):
         logger.info("Starting Perplexity bot...")
@@ -649,10 +648,10 @@ class PerplexityTelegramBot:
 
 if __name__ == '__main__':
     if not TELEGRAM_BOT_TOKEN or not PERPLEXITY_API_KEY:
-        print("ОШИБКА: Заполните TELEGRAM_BOT_TOKEN и PERPLEXITY_API_KEY в config.env!")
-        print("1. Получите TELEGRAM_BOT_TOKEN у @BotFather")
-        print("2. Получите PERPLEXITY_API_KEY на https://www.perplexity.ai/account/api/keys")
-        print("3. Заполните значения в файле config.env")
+        print("ERROR: Please set TELEGRAM_BOT_TOKEN and PERPLEXITY_API_KEY in config.env!")
+        print("1. Obtain TELEGRAM_BOT_TOKEN from @BotFather")
+        print("2. Obtain PERPLEXITY_API_KEY at https://www.perplexity.ai/account/api/keys")
+        print("3. Fill in their values in the config.env file")
     else:
         bot = PerplexityTelegramBot()
         bot.run()

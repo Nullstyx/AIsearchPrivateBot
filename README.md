@@ -1,58 +1,9 @@
-## Описание
+# PerplexityPrivateBot
 
-**PerplexityPrivateBot** — Telegram‑бот на Python с интеграцией **Perplexity API**.  
-Поддерживает диалог с сохранением контекста, выбор режимов моделей Sonar, настройку системного промпта и гибкую систему доступа по `chat_id` и доступным режимам.
+A Telegram bot that uses the Perplexity API — supports the Sonar, Sonar Pro, and Sonar-reasoning models. Each user has a dialog history, and if the message or token limit is exceeded, the context is automatically shortened.
 
-## Основные функции
+**Requirements:**  
+- Python 3.10  
+- `requirements.txt`
 
-- **Текстовый чат с Perplexity**: отправка сообщений, ответы с учётом истории диалога.
-- **Сохранение контекста**: история и режимы сохраняются на диск для каждого пользователя отдельно.
-- **Режимы моделей**:
-  - Sonar
-  - Sonar Pro
-  - Sonar-reasoning
-- **Системный промпт**:
-  - Просмотр и изменение через `/prompt`
-  - Сохраняется между перезапусками
-- **Доступ по `chat_id` и режимам**:
-  - Формат в `config.env`: `UserX=chat_id=MODE_MASK` (1 — Sonar, 2 — Sonar Pro, 3 — Sonar-reasoning)
-  - Можно ограничить, какие режимы доступны каждому пользователю
-- **Безопасность**:
-  - Бот работает только в **личных чатах** (`private`)
-  - Доступ к боту только по разрешённым `chat_id` (если указаны)
-
-## Как пользоваться
-
-1. **Установка зависимостей**
-   ```bash
-   pip install -r requirements.txt
-   ```
-
-2. **Настройка `config.env`**
-   - Указать:
-     - `TELEGRAM_BOT_TOKEN` — токен бота из `@BotFather`
-     - `PERPLEXITY_API_KEY` — ключ API Perplexity
-   - При необходимости указать пользователей и доступные режимы:
-     ```env
-     User1=123456789=123  # все три режима
-     User2=987654321=1    # только Sonar
-     ```
-   - Если ни один `UserX` не указан — бот доступен для всех пользователей и всех режимов.
-
-3. **Запуск бота**
-   ```bash
-   python bot.py
-   ```
-
-4. **Команды в Telegram**
-   - `/start` — приветствие, инлайн‑кнопки `/mode`, `/reset`, `/prompt`
-   - `/mode` — выбор режима модели (с учётом ограничений из `config.env`)
-   - `/reset` — сброс контекста диалога
-   - `/prompt` — просмотр/изменение системного промпта
-
-## Автор и лицензия
-
-- **Автор**: [MrachniyTipchek](https://github.com/MrachniyTipchek)
-- **Лицензия**: MIT (см. файл `LICENSE`)
-
-
+The bot is configured via the `config.env` file. It is possible to activate response mode for specific chat_ids or for everyone, and to configure a proxy for API requests.
