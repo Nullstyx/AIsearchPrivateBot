@@ -1,4 +1,4 @@
-# PerplexityPrivateBot
+# AIsearchPrivateBot
 
 A Telegram bot that uses the Perplexity API — supports the Sonar, Sonar Pro, and Sonar-reasoning models. Each user has a dialog history, and if the message or token limit is exceeded, the context is automatically shortened.
 
